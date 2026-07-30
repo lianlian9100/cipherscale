@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050709" />
+  <title>CipherScale — Guess the Lizard's Word</title>
+  <style>
+    :root {
+      --bg: #050709;
+      --panel: rgba(15, 19, 23, 0.88);
+      --panel-2: rgba(7, 10, 13, 0.92);
+      --line: rgba(153, 249, 255, 0.14);
+      --line-strong: rgba(153, 249, 255, 0.34);
+      --cyan: #68f4ff;
+      --cyan-2: #14bfd0;
+      --cyan-soft: rgba(104, 244, 255, 0.14);
+      --text: #f3f7f8;
+      --muted: #849096;
+      --danger: #ff6d7f;
+      --warning: #f2c66d;
+      --success: #72f2b4;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.54);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 50% 8%, rgba(37, 183, 196, 0.12), transparent 33%),
+        linear-gradient(145deg, #050709 0%, #090d10 52%, #030405 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.014) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at center, black, transparent 80%);
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell {
+      width: min(1500px, 100%);
+      margin: 0 auto;
+      padding: 22px;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      width: 38px;
+      aspect-ratio: 1;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      background: linear-gradient(145deg, rgba(104,244,255,.13), rgba(104,244,255,.02));
+      box-shadow: inset 0 0 20px rgba(104,244,255,.06);
+      font-size: 20px;
+    }
+
+    .top-actions { display: flex; gap: 8px; }
+
+    .icon-btn, .ghost-btn, .primary-btn, .submit-btn {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255,255,255,.035);
+      transition: .18s ease;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      font-size: 17px;
+    }
+
+    .icon-btn:hover, .ghost-btn:hover { border-color: var(--line-strong); background: var(--cyan-soft); }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .lobby {
+      min-height: calc(100vh - 100px);
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .hero, .setup-card, .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(155deg, rgba(18,23,27,.91), rgba(5,8,10,.94));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(34px, 5vw, 74px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      right: -160px;
+      bottom: -190px;
+      border: 1px solid rgba(104,244,255,.15);
+      box-shadow: 0 0 0 45px rgba(104,244,255,.018), 0 0 0 95px rgba(104,244,255,.012);
+    }
+
+    .eyebrow {
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: .2em;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 750px;
+      font-size: clamp(54px, 8vw, 112px);
+      line-height: .88;
+      letter-spacing: -.065em;
+      text-transform: uppercase;
+    }
+
+    h1 span { color: var(--cyan); text-shadow: 0 0 32px rgba(104,244,255,.16); }
+
+    .hero-copy {
+      max-width: 620px;
+      margin: 25px 0 0;
+      color: #adb6ba;
+      line-height: 1.65;
+      font-size: 16px;
+    }
+
+    .mechanic-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 32px;
+    }
+
+    .mechanic-chip {
+      border: 1px solid var(--line);
+      padding: 10px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #cbd2d5;
+      background: rgba(0,0,0,.18);
+    }
+
+    .setup-card { padding: 30px; display: flex; flex-direction: column; justify-content: center; }
+    .setup-card h2 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.03em; }
+    .setup-card > p { margin: 0 0 25px; color: var(--muted); line-height: 1.5; }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: #b9c1c4;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+      font-weight: 700;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      padding: 14px 15px;
+      color: var(--text);
+      border-radius: 13px;
+      border: 1px solid var(--line);
+      outline: none;
+      background: rgba(0,0,0,.28);
+    }
+
+    .field input:focus, .field select:focus { border-color: var(--cyan-2); box-shadow: 0 0 0 3px rgba(104,244,255,.08); }
+    select option { background: #0d1114; }
+
+    .primary-btn {
+      border-color: rgba(104,244,255,.42);
+      border-radius: 14px;
+      padding: 15px 18px;
+      color: #001113;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #8df8ff, #38d9e6);
+      box-shadow: 0 12px 35px rgba(56,217,230,.14);
+    }
+
+    .primary-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+    .rules-mini {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .rule-mini {
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(255,255,255,.02);
+      text-align: center;
+    }
+
+    .rule-mini b { display: block; font-size: 13px; color: var(--cyan); margin-bottom: 3px; }
+    .rule-mini span { color: var(--muted); font-size: 11px; }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      min-height: calc(100vh - 100px);
+    }
+
+    .arena-panel { position: relative; overflow: hidden; padding: 20px; min-height: 760px; }
+
+    .game-meta {
+      position: relative;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .round-info { display: flex; align-items: baseline; gap: 10px; }
+    .round-info strong { font-size: 22px; }
+    .round-info span { color: var(--muted); font-size: 13px; }
+
+    .phase-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--cyan-soft);
+      border: 1px solid var(--line-strong);
+      color: var(--cyan);
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .13em;
+      font-size: 10px;
+    }
+
+    .arena {
+      position: absolute;
+      inset: 72px 20px 118px;
+      min-height: 560px;
+    }
+
+    .orbit {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(72vw, 700px, calc(100vh - 245px));
+      max-width: calc(100% - 60px);
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(104,244,255,.13);
+      border-radius: 50%;
+      box-shadow: inset 0 0 90px rgba(104,244,255,.025), 0 0 0 1px rgba(255,255,255,.015);
+    }
+
+    .orbit::before, .orbit::after {
+      content: "";
+      position: absolute;
+      inset: 13%;
+      border: 1px dashed rgba(104,244,255,.07);
+      border-radius: 50%;
+    }
+    .orbit::after { inset: 33%; border-style: solid; }
+
+    .center-stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      z-index: 5;
+      text-align: center;
+    }
+
+    .lizard-wrap { height: 270px; position: relative; filter: drop-shadow(0 18px 25px rgba(0,0,0,.55)); }
+    .lizard { position: absolute; inset: 0; }
+
+    .tail {
+      position: absolute;
+      width: 115px;
+      height: 48px;
+      border: 21px solid #2bd5df;
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      right: 18px;
+      bottom: 45px;
+      transform: rotate(18deg);
+    }
+
+    .body {
+      position: absolute;
+      width: 126px;
+      height: 150px;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%);
+      border-radius: 48% 48% 38% 38%;
+      background: linear-gradient(145deg, #73f7ff, #21c4d0 72%);
+      border: 3px solid #071d20;
+      box-shadow: inset -18px -14px 28px rgba(0,55,60,.22);
+    }
+
+    .belly {
+      position: absolute;
+      width: 67px;
+      height: 101px;
+      left: 50%;
+      top: 31px;
+      transform: translateX(-50%);
+      border-radius: 52%;
+      background: rgba(210,255,252,.55);
+    }
+
+    .head {
+      position: absolute;
+      width: 156px;
+      height: 120px;
+      left: 50%;
+      top: 15px;
+      transform: translateX(-50%);
+      border-radius: 52% 52% 42% 42%;
+      background: linear-gradient(145deg, #86fbff, #27ced9);
+      border: 3px solid #071d20;
+      box-shadow: inset -18px -14px 30px rgba(0,55,60,.18);
+      z-index: 3;
+    }
+
+    .crest { position: absolute; left: 50%; top: -15px; transform: translateX(-50%); display: flex; gap: 3px; }
+    .crest i { width: 15px; height: 28px; background: #1f7881; clip-path: polygon(50% 0,100% 100%,0 100%); display: block; }
+    .crest i:nth-child(2) { height: 37px; margin-top: -8px; }
+
+    .eye {
+      position: absolute;
+      width: 35px;
+      height: 40px;
+      top: 31px;
+      border-radius: 50%;
+      background: #eefeff;
+      border: 3px solid #071d20;
+      overflow: hidden;
+    }
+    .eye.left { left: 29px; }
+    .eye.right { right: 29px; }
+    .eye::after {
+      content: "";
+      position: absolute;
+      width: 11px;
+      height: 17px;
+      background: #071114;
+      border-radius: 50%;
+      left: 11px;
+      top: 12px;
+      transition: transform .2s ease;
+    }
+
+    .lizard.thinking .eye::after { transform: translate(4px, -4px); }
+    .lizard.celebrate { animation: bob .42s ease 2; }
+    .lizard.celebrate .eye::after { transform: translateY(-4px); }
+    @keyframes bob { 50% { transform: translateY(-10px) rotate(-2deg); } }
+
+    .mouth {
+      position: absolute;
+      width: 54px;
+      height: 19px;
+      left: 50%;
+      bottom: 19px;
+      transform: translateX(-50%);
+      border-bottom: 4px solid #071d20;
+      border-radius: 50%;
+    }
+
+    .arm {
+      position: absolute;
+      width: 74px;
+      height: 24px;
+      background: #34d7e1;
+      border: 3px solid #071d20;
+      border-radius: 30px;
+      z-index: 7;
+      top: 144px;
+    }
+    .arm.left { left: 53px; transform: rotate(22deg); }
+    .arm.right { right: 53px; transform: rotate(-22deg); }
+
+    .hint-box {
+      position: absolute;
+      z-index: 6;
+      left: 50%;
+      bottom: 15px;
+      width: 255px;
+      min-height: 104px;
+      transform: translateX(-50%);
+      padding: 16px 19px;
+      display: grid;
+      place-items: center;
+      border-radius: 17px;
+      border: 2px solid #081416;
+      background: linear-gradient(145deg, #121719, #090d0f);
+      box-shadow: inset 0 0 0 1px rgba(104,244,255,.16), 0 16px 30px rgba(0,0,0,.42);
+    }
+
+    .hint-label { color: var(--cyan); font-size: 9px; text-transform: uppercase; letter-spacing: .18em; font-weight: 900; margin-bottom: 6px; }
+    .hint-text { font-size: 16px; line-height: 1.32; font-weight: 750; }
+
+    .countdown-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 20;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(0,0,0,.18), transparent 45%);
+    }
+    .countdown-overlay.active { display: grid; }
+    .countdown-number {
+      font-size: clamp(100px, 16vw, 220px);
+      line-height: 1;
+      font-weight: 950;
+      color: var(--cyan);
+      text-shadow: 0 0 55px rgba(104,244,255,.25);
+      animation: countPop .7s ease;
+    }
+    @keyframes countPop { from { opacity: 0; transform: scale(1.35); } to { opacity: 1; transform: scale(1); } }
+
+    .player-node {
+      --angle: 0deg;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 126px;
+      transform:
+        translate(-50%, -50%)
+        rotate(var(--angle))
+        translateY(calc(var(--orbit-radius) * -1))
+        rotate(calc(var(--angle) * -1));
+      z-index: 7;
+      text-align: center;
+      transition: .25s ease;
+    }
+
+    .avatar {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 7px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid var(--line-strong);
+      color: #c5fdff;
+      background: radial-gradient(circle at 35% 30%, rgba(104,244,255,.28), rgba(11,19,22,.96) 66%);
+      font-weight: 900;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      position: relative;
+    }
+
+    .player-node.human .avatar { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(104,244,255,.08), 0 8px 24px rgba(0,0,0,.4); }
+    .player-node.correct .avatar { border-color: var(--success); box-shadow: 0 0 0 5px rgba(114,242,180,.1), 0 8px 24px rgba(0,0,0,.4); }
+    .player-node.blank .avatar, .player-node.repeat .avatar { border-color: var(--danger); }
+
+    .answer-dot {
+      position: absolute;
+      right: -2px;
+      bottom: 3px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 3px solid #0a0e10;
+      background: #394247;
+    }
+    .answer-dot.locked { background: var(--warning); }
+    .answer-dot.submitted { background: var(--cyan); box-shadow: 0 0 12px rgba(104,244,255,.4); }
+    .answer-dot.correct { background: var(--success); }
+    .answer-dot.penalty { background: var(--danger); }
+
+    .player-name { font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-score { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .player-answer { height: 18px; color: var(--cyan); font-size: 10px; margin-top: 3px; opacity: 0; transition: .2s; }
+    .player-answer.visible { opacity: 1; }
+
+    .guess-dock {
+      position: absolute;
+      z-index: 25;
+      left: 50%;
+      bottom: 20px;
+      width: min(720px, calc(100% - 40px));
+      transform: translateX(-50%);
+    }
+
+    .timer-line {
+      height: 5px;
+      overflow: hidden;
+      background: rgba(255,255,255,.07);
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .timer-fill { width: 100%; height: 100%; background: linear-gradient(90deg, var(--cyan), #b4fbff); transform-origin: left; }
+    .timer-fill.running { animation: drain 5s linear forwards; }
+    @keyframes drain { to { transform: scaleX(0); } }
+
+    .guess-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px;
+      padding: 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 17px;
+      background: rgba(4,7,9,.94);
+      box-shadow: 0 18px 45px rgba(0,0,0,.45);
+    }
+
+    .guess-input {
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      background: transparent;
+      padding: 9px 12px;
+      font-size: 17px;
+      font-weight: 650;
+    }
+    .guess-input::placeholder { color: #5f696e; }
+    .guess-input:disabled { cursor: not-allowed; opacity: .55; }
+
+    .submit-btn {
+      padding: 0 22px;
+      border-radius: 12px;
+      background: var(--cyan);
+      color: #001214;
+      border-color: transparent;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .08em;
+    }
+    .submit-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    .input-caption { text-align: center; color: var(--muted); font-size: 11px; margin-top: 8px; }
+
+    .sidebar { display: flex; flex-direction: column; gap: 14px; }
+    .score-panel { padding: 18px; flex: 1; }
+    .panel-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .panel-title h3 { margin: 0; font-size: 16px; }
+    .panel-title span { color: var(--muted); font-size: 11px; }
+
+    .leaderboard { display: flex; flex-direction: column; gap: 8px; }
+    .leader-row {
+      display: grid;
+      grid-template-columns: 27px 1fr auto;
+      gap: 9px;
+      align-items: center;
+      padding: 11px;
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 13px;
+      background: rgba(255,255,255,.018);
+      transition: .2s ease;
+    }
+    .leader-row:first-child { border-color: rgba(104,244,255,.23); background: rgba(104,244,255,.055); }
+    .rank { color: var(--muted); font-size: 11px; }
+    .leader-name { font-size: 12px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .leader-points { color: var(--cyan); font-size: 12px; font-weight: 900; }
+
+    .log-panel { padding: 18px; min-height: 190px; }
+    .round-log { display: flex; flex-direction: column; gap: 8px; max-height: 170px; overflow: auto; padding-right: 4px; }
+    .log-item { font-size: 11px; color: #9aa5a9; line-height: 1.45; border-left: 2px solid var(--line-strong); padding-left: 9px; }
+    .log-item b { color: var(--text); }
+
+    .ghost-btn { width: 100%; padding: 12px 15px; border-radius: 13px; font-weight: 800; }
+
+    .results-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 60;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(14px);
+    }
+    .results-modal.active { display: grid; }
+    .results-card {
+      width: min(580px, 100%);
+      border: 1px solid var(--line-strong);
+      border-radius: 24px;
+      padding: 30px;
+      background: linear-gradient(155deg, #151b1e, #080b0d);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .results-card h2 { font-size: clamp(34px, 7vw, 62px); margin: 0 0 8px; letter-spacing: -.05em; }
+    .results-card .winner { color: var(--cyan); }
+    .results-card p { color: var(--muted); margin: 0 0 24px; }
+    .final-list { text-align: left; display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+    .final-row { display: flex; justify-content: space-between; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.03); }
+    .final-row:first-child { border: 1px solid var(--line-strong); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      top: 82px;
+      transform: translate(-50%, -15px);
+      z-index: 80;
+      padding: 11px 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      background: rgba(7,11,13,.96);
+      color: var(--text);
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: .22s ease;
+      box-shadow: 0 15px 35px rgba(0,0,0,.4);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 1050px) {
+      .lobby { grid-template-columns: 1fr; }
+      .game-grid { grid-template-columns: 1fr; }
+      .sidebar { display: grid; grid-template-columns: 1fr 1fr; }
+      .score-panel { grid-row: span 2; }
+      .arena-panel { min-height: 730px; }
+    }
+
+    @media (max-width: 700px) {
+      .app-shell { padding: 12px; }
+      .topbar { margin-bottom: 12px; }
+      .brand { letter-spacing: .1em; }
+      .hero, .setup-card { padding: 24px; }
+      .rules-mini { grid-template-columns: 1fr; }
+      .arena-panel { min-height: 690px; padding: 14px; }
+      .arena { inset: 66px 0 114px; }
+      .orbit { width: min(94vw, 560px); max-width: calc(100% - 5px); }
+      .center-stage { width: 245px; transform: translate(-50%, -50%) scale(.82); }
+      .player-node { width: 90px; }
+      .avatar { width: 48px; height: 48px; }
+      .player-name { font-size: 10px; }
+      .sidebar { grid-template-columns: 1fr; }
+      .score-panel { grid-row: auto; }
+      .guess-row { grid-template-columns: 1fr 76px; }
+      .submit-btn { padding: 0 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark">◈</div> CipherScale</div>
+      <div class="top-actions">
+        <button class="icon-btn" id="muteBtn" aria-label="Toggle sound" title="Toggle sound">♪</button>
+        <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="lobbyScreen" class="screen active">
+        <div class="lobby">
+          <article class="hero">
+            <div class="eyebrow">A local multiplayer prototype</div>
+            <h1>Read the hint.<br><span>Beat the clock.</span></h1>
+            <p class="hero-copy">The cyan host keeps one secret word for up to five clue rounds. Decode increasingly useful hints, lock in a fresh guess, and solve it before the circle does. Wrong guesses are safe. Silence and recycled answers are not.</p>
+            <div class="mechanic-row">
+              <span class="mechanic-chip">Up to 5 clues per word</span>
+              <span class="mechanic-chip">Speed-based scoring</span>
+              <span class="mechanic-chip">194 unseen-first mysteries</span>
+              <span class="mechanic-chip">No penalty for wrong guesses</span>
+            </div>
+          </article>
+
+          <aside class="setup-card">
+            <div class="eyebrow">Create a table</div>
+            <h2>Practice against bots</h2>
+            <p>This prototype runs completely in your browser. Online rooms can be connected later without changing the core game loop.</p>
+
+            <div class="field">
+              <label for="playerName">Player name <span>Host seat</span></label>
+              <input id="playerName" maxlength="16" value="Player" autocomplete="off" />
+            </div>
+
+            <div class="field">
+              <label for="botCount">Bot opponents <span id="botCountLabel">5</span></label>
+              <input id="botCount" type="range" min="1" max="7" value="5" />
+            </div>
+
+            <div class="field">
+              <label for="difficulty">Bot difficulty <span>Reaction + accuracy</span></label>
+              <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="normal" selected>Normal</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="roundCount">Match length <span>Mystery words</span></label>
+              <select id="roundCount">
+                <option value="3">3 mystery words</option>
+                <option value="5" selected>5 mystery words</option>
+                <option value="8">8 mystery words</option>
+                <option value="10">10 mystery words</option>
+              </select>
+            </div>
+
+            <button class="primary-btn" id="startBtn">Enter the circle</button>
+
+            <div class="rules-mini">
+              <div class="rule-mini"><b>+100–1000</b><span>Earlier clues pay more</span></div>
+              <div class="rule-mini"><b>−250</b><span>No answer</span></div>
+              <div class="rule-mini"><b>−150</b><span>Repeated answer</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="gameScreen" class="screen">
+        <div class="game-grid">
+          <section class="panel arena-panel">
+            <div class="game-meta">
+              <div class="round-info"><strong id="roundTitle">Mystery 1</strong><span id="roundCounter">1 of 5 · clue 1/5</span></div>
+              <div class="phase-pill" id="phasePill">Preparing</div>
+            </div>
+
+            <div class="arena">
+              <div class="orbit" id="orbit">
+                <div id="playerNodes"></div>
+              </div>
+
+              <div class="center-stage">
+                <div class="lizard-wrap">
+                  <div class="lizard thinking" id="lizard">
+                    <div class="tail"></div>
+                    <div class="body"><div class="belly"></div></div>
+                    <div class="head">
+                      <div class="crest"><i></i><i></i><i></i></div>
+                      <div class="eye left"></div><div class="eye right"></div>
+                      <div class="mouth"></div>
+                    </div>
+                    <div class="arm left"></div><div class="arm right"></div>
+                    <div class="hint-box">
+                      <div>
+                        <div class="hint-label" id="hintLabel">The hint</div>
+                        <div class="hint-text" id="hintText">The host is choosing a word...</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="countdown-overlay" id="countdownOverlay"><div class="countdown-number" id="countdownNumber">3</div></div>
+            </div>
+
+            <div class="guess-dock">
+              <div class="timer-line"><div class="timer-fill" id="timerFill"></div></div>
+              <div class="guess-row">
+                <input class="guess-input" id="guessInput" placeholder="Wait for the countdown..." maxlength="28" disabled autocomplete="off" />
+                <button class="submit-btn" id="submitBtn" disabled>Lock in</button>
+              </div>
+              <div class="input-caption" id="inputCaption">Your box opens when the host says GO.</div>
+            </div>
+          </section>
+
+          <aside class="sidebar">
+            <section class="panel score-panel">
+              <div class="panel-title"><h3>Leaderboard</h3><span>Live score</span></div>
+              <div class="leaderboard" id="leaderboard"></div>
+            </section>
+
+            <section class="panel log-panel">
+              <div class="panel-title"><h3>Round feed</h3><span>Latest first</span></div>
+              <div class="round-log" id="roundLog"><div class="log-item">The table is ready.</div></div>
+            </section>
+
+            <button class="ghost-btn" id="leaveBtn">Leave match</button>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="results-modal" id="resultsModal">
+    <div class="results-card">
+      <div class="eyebrow">Match complete</div>
+      <h2><span class="winner" id="winnerName">Player</span> wins.</h2>
+      <p id="winnerCopy">Fast hands. Sharp mind.</p>
+      <div class="final-list" id="finalList"></div>
+      <button class="primary-btn" id="playAgainBtn">Play again</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const CLUES_PER_WORD = 5;
+    const SEEN_WORDS_KEY = 'cipherscale_seen_words_v3';
+    const RAW_WORD_BANK = [["tiger","Animal","Orange cuts through green without making a sound.","It prefers a private kingdom to a crowded one.","Its markings hide it better than they advertise it.","A giant Asian cat with black stripes."],["octopus","Animal","Eight questions reach out from one mind.","It can leave a cloud behind when the situation turns dangerous.","Its body can squeeze through spaces much smaller than expected.","A highly intelligent sea animal with eight arms."],["owl","Animal","Night seems to have given this hunter a face.","Its head can turn far beyond what yours can.","It is linked with wisdom, though mice know another side of it.","A wide-eyed bird that hunts after dark."],["penguin","Animal","A formal suit appears where no tailor could survive.","It trades the sky for speed beneath freezing water.","Some parents balance an egg above the ice.","A black-and-white flightless bird of the Southern Hemisphere."],["camel","Animal","The desert carries its own canteen.","Long journeys matter more than fast ones here.","Its eyelashes and feet are built for sand.","A hump-backed animal used for travel in dry regions."],["dolphin","Animal","A curved smile breaks the surface before the body does.","It navigates with sounds people cannot follow.","Groups of these swimmers are called pods.","A clever marine mammal known for leaping beside boats."],["hedgehog","Animal","A small ball makes a very poor mouthful.","Its defense points outward in every direction.","It searches gardens at night for insects.","A tiny mammal covered in stiff spines."],["peacock","Animal","A walking fan waits for an audience.","The most famous display belongs to the male.","Its feathers carry dozens of eye-like patterns.","A colorful bird with a huge decorative tail."],["beaver","Animal","A river changes shape one branch at a time.","Its front teeth never stop growing.","The home it builds can create an entire pond.","A flat-tailed animal famous for building dams."],["chameleon","Animal","The room seems to repaint this visitor.","Its eyes can watch two directions independently.","A long tongue does most of the hunting.","A tree-dwelling lizard known for changing color."],["wolf","Animal","A lonely call can belong to a crowded family.","Its social group follows a strict order.","Stories often place it outside the safest path.","A wild canine that commonly lives and hunts in packs."],["kangaroo","Animal","The road becomes a series of springs.","A young passenger travels before it can keep up.","Its tail helps turn landing into balance.","An Australian animal that moves by powerful hops."],["flamingo","Animal","A pink question mark stands in shallow water.","Its unusual color comes from what it eats.","It often rests with only one leg visible.","A tall pink wading bird with a bent bill."],["raccoon","Animal","The mask is natural; the burglary is opportunistic.","Its paws investigate bins almost like small hands.","Cities provide it with midnight buffets.","A gray nocturnal mammal with a black facial mask."],["jellyfish","Animal","A transparent bell carries a hidden warning.","It drifts more than it steers.","Some species can glow and many can sting.","A soft-bodied sea creature with trailing tentacles."],["volcano","Nature","The mountain keeps weather underground.","Pressure writes a warning in smoke and shaking stone.","Its calm shape can hide a chamber of melted rock.","A mountain that can erupt lava and ash."],["glacier","Nature","A frozen river needs centuries to arrive.","It carves valleys while appearing almost still.","Much of its body may be ancient compressed snow.","A huge mass of land ice that slowly moves."],["canyon","Nature","Time cuts downward instead of forward.","Its walls display layers like pages of stone.","A river is often responsible for the deepest part.","A deep narrow valley with steep rocky sides."],["waterfall","Nature","A river suddenly forgets the ground beneath it.","Mist gathers where height becomes noise.","It is named for motion rather than the pool below.","A stream or river dropping over a steep edge."],["coral","Nature","A city of stone is secretly alive.","Tiny builders work together below warm water.","Bleaching is a warning, not a cleaning process.","A marine organism that forms colorful reefs."],["desert","Nature","The horizon offers more distance than shelter.","Days and nights disagree sharply about temperature.","Rain is rare, but life still specializes in waiting.","A very dry region with little precipitation."],["forest","Nature","One trunk is an object; thousands become a world.","Its roof is made of leaves and its floor recycles everything.","Wildlife uses layers from soil to canopy.","A large area densely covered with trees."],["iceberg","Nature","Most of the danger refuses to be seen.","It begins on land before drifting into open water.","Only a small portion usually rises above the surface.","A floating mass of ice broken from a glacier."],["avalanche","Nature","The slope makes one decision all at once.","A small disturbance can release a fast white wall.","Mountain sound and recent snowfall can affect the risk.","A large mass of snow rushing downhill."],["geyser","Nature","The ground keeps a kettle with no lid.","Heat and pressure make the display repeat.","Famous examples shoot columns of hot water and steam.","A spring that periodically erupts heated water."],["swamp","Nature","Land and water refuse to choose sides.","Roots rise above dark, slow-moving ground.","Mosquitoes, frogs, and alligators may thrive here.","A wetland with waterlogged soil and many trees."],["meadow","Nature","The landscape lowers its voice and opens the sky.","Grasses replace trunks while flowers invite insects.","It is often found beside woods or mountains.","An open field covered with grass and wildflowers."],["thunder","Weather","The sky arrives late to its own flash.","Distance can be estimated by counting before this sound.","It rolls because sound reaches you along different paths.","The loud rumble caused by rapidly expanding air after lightning."],["lightning","Weather","For an instant, the storm draws a white crack.","It can heat nearby air hotter than the Sun's surface.","The sound it creates reaches you later.","A powerful electrical flash in the atmosphere."],["tornado","Weather","A narrow road moves while everything else runs.","Its strength is measured partly by the damage left behind.","A rotating funnel may connect cloud and ground.","A violently spinning column of air during a storm."],["hurricane","Weather","The calmest place is hidden inside the worst weather.","Warm ocean water feeds its rotating structure.","Its winds circle a clearly visible eye.","A massive tropical storm with powerful rotating winds."],["blizzard","Weather","The world becomes white before it becomes invisible.","Wind matters as much as snowfall in earning this name.","Travel can become dangerous even without extreme accumulation.","A severe snowstorm with strong wind and low visibility."],["fog","Weather","A cloud decides to walk at street level.","Headlights often make seeing through it harder.","It forms when air near the ground becomes saturated.","A thick layer of tiny water droplets close to the ground."],["rainbow","Weather","A curve appears only when light and water agree.","The observer's position decides where it can be seen.","Its colors always follow the same order.","A multicolored arc formed when sunlight passes through droplets."],["drought","Weather","The disaster arrives through absence.","Crops fail slowly while reservoirs reveal old shorelines.","It lasts far longer than a normal dry afternoon.","A prolonged period with unusually little rain."],["hail","Weather","A storm throws stones that melt in your hand.","Strong updrafts repeatedly lift the pieces before they fall.","Size can range from peas to objects larger than golf balls.","Balls of ice that fall from thunderstorm clouds."],["aurora","Weather","The night sky behaves like a curtain in wind.","Charged particles and a planet's magnetic field create it.","It is most common near the polar regions.","Glowing bands of color seen in high-latitude skies."],["compass","Object","A tiny certainty survives every wrong turn.","One end keeps choosing the same part of the world.","It becomes unreliable near strong magnets.","A direction-finding tool with a needle that points north."],["lantern","Object","A small room is built around a flame.","It travels better than an ordinary household lamp.","Old versions used oil; modern ones may use batteries.","A portable light protected by a surrounding case."],["anchor","Object","The ship moves everywhere except where this decides.","It works best when buried rather than displayed.","A chain connects its weight to the vessel above.","A heavy device dropped to keep a boat in place."],["mirror","Object","A room appears where no doorway exists.","It reverses left and right only from your point of view.","Silver or aluminum often hides behind the glass.","A smooth surface that reflects an image."],["helmet","Object","The damage reaches the shell before the person.","Different versions belong to cyclists, soldiers, and builders.","It must fit closely to protect the part it covers.","Protective equipment worn around the head."],["saddle","Object","The seat has no legs because its ride already does.","Stirrups often hang from either side.","Leather straps secure it before a rider climbs up.","A seat fastened to the back of a horse or similar animal."],["parachute","Object","Falling becomes slower when fabric becomes larger.","It is packed small before becoming a wide canopy.","Air resistance matters more than an engine.","A device that safely slows descent through the air."],["hourglass","Object","Time becomes visible only while it is disappearing.","Turning it over restores the beginning without adding anything.","Two glass chambers trade sand through a narrow neck.","A timer that measures an interval using falling sand."],["umbrella","Object","A roof follows one person down the street.","Its enemy can arrive sideways rather than downward.","Ribs spread fabric from a central shaft.","A folding handheld cover used against rain or sun."],["telescope","Object","Distance is reduced without anything moving closer.","Its first famous users changed how people understood the sky.","Lenses or mirrors gather more light than the eye can.","An instrument for viewing extremely distant objects."],["binoculars","Object","Two tunnels persuade the eyes to share one distant view.","Birdwatchers often carry them by a neck strap.","A focus wheel usually controls both sides together.","A handheld pair of magnifying viewing tubes."],["key","Object","A small shape remembers one private route.","Teeth can open something without biting it.","Digital versions may contain no metal at all.","A shaped object used to operate a lock."],["suitcase","Object","A temporary closet learns how to travel.","Wheels improved it more than fashion did.","Airports make owners identify nearly identical versions.","A handled container used to carry clothes on trips."],["needle","Object","The smallest tool in the room may carry the thread.","One eye is enough because it does not see.","Medical versions deliver rather than stitch.","A very thin pointed tool used for sewing or injections."],["magnet","Object","It can pull without rope and push without touching.","Breaking it creates smaller pairs rather than a single pole.","Iron responds much more strongly than wood or plastic.","An object with poles that attracts certain metals."],["candle","Object","It becomes shorter while doing its job.","A thread in the center controls the flame.","Wax changes state before disappearing into the air.","A wax cylinder with a wick used for light."],["ladder","Object","The path upward is made of repeated pauses.","It must lean safely or stand with a partner side.","Firefighters may extend one far beyond household height.","A climbing tool with rungs between two long supports."],["whistle","Object","A pocket-sized object can command an entire field.","Air crosses a sharp edge to make the sound.","Referees and lifeguards use it to cut through noise.","A small device that makes a high sound when blown."],["backpack","Object","The container disappears from view while being carried.","Two straps divide the load across the shoulders.","Students and hikers fill it for very different journeys.","A bag worn on the back with shoulder straps."],["lock","Object","It creates a boundary without building a wall.","A code, key, or fingerprint may persuade it to open.","Its entire purpose is to resist the wrong request.","A fastening device that secures something closed."],["zipper","Object","Two rows become one behind a moving traveler.","Missing a single tooth can ruin the whole trip.","It commonly closes jackets, bags, and tents.","A sliding fastener with interlocking teeth."],["blanket","Object","A portable layer of night-time warmth.","It is larger than clothing but softer than furniture.","Beds, picnics, and emergencies all make use of one.","A broad piece of fabric used for warmth or covering."],["pocket","Object","A room is sewn into clothing without changing the address.","Coins and hands disappear into it.","Its absence on some outfits causes unusual frustration.","A small fabric compartment built into clothes or bags."],["soap","Object","It wins by helping water take dirt away.","Bubbles are visible, but the molecular trick is not.","Bars and liquids perform the same basic task.","A cleaning substance used with water on skin or surfaces."],["clock","Object","The hands move constantly without carrying anything.","It divides a circle into a daily argument with lateness.","Digital versions removed the face but kept the purpose.","A device that shows the current time."],["camera","Technology","A moment enters and never comes back out the same way.","Its eye can change size but does not blink.","Light becomes an image through a lens and sensor or film.","A device used to capture photographs or video."],["keyboard","Technology","Ten fingers turn silence into instructions.","The longest button usually creates nothing visible.","Its layout was shaped partly by early mechanical limits.","A panel of keys used to type into a computer."],["robot","Technology","Instructions borrow a body.","Factories use many that never resemble people.","Sensors allow it to respond to the world around it.","A programmable machine that performs physical tasks."],["password","Technology","Knowledge becomes a door handle.","Strength often grows with length and unpredictability.","Reusing one can turn a single breach into many.","A secret string used to prove access rights."],["antenna","Technology","Invisible traffic needs a visible doorway.","Length and shape affect which signals it handles well.","It may transmit, receive, or do both.","A structure used to send or collect radio waves."],["browser","Technology","The journey crosses the world while the chair remains still.","Tabs allow many destinations to stay open together.","It interprets web code into pages people can use.","Software used to visit and interact with websites."],["pixel","Technology","A photograph becomes a crowd of tiny squares.","One alone contains almost no meaning.","Screens control millions of these colored points.","The smallest individually controlled element of a digital image."],["drone","Technology","A pilot remains behind while the aircraft leaves.","Four spinning arms are common but not required.","Cameras made consumer versions especially popular.","A remotely controlled or autonomous unmanned aircraft."],["circuit","Technology","The path must return before the work can continue.","A break anywhere can silence every connected part.","Components guide electrical current around a planned route.","A closed path through which electricity flows."],["battery","Technology","Stored possibility waits behind two terminals.","It grows weaker by completing other objects' work.","Some versions can reverse the chemistry and recharge.","A device that stores chemical energy and supplies electricity."],["bridge","Place","Two sides agree to meet above the problem.","Its middle may hang, arch, float, or stand on columns.","It crosses something without filling it in.","A structure that carries a route over an obstacle."],["castle","Place","A home becomes a warning made of stone.","Walls, towers, and narrow openings favored defense over comfort.","Royal families and soldiers once shared its purpose.","A fortified residence associated with rulers and armies."],["library","Place","Thousands of voices wait in enforced silence.","Items leave temporarily but are expected to return.","Shelves organize stories, facts, and records for public use.","A place where books and other media can be borrowed or studied."],["pyramid","Place","A square climbs until only a point remains.","Ancient labor turned geometry into a monument.","Egypt holds the most famous examples, though not the only ones.","A massive structure with triangular sides meeting near the top."],["lighthouse","Place","A building speaks to ships using darkness and repetition.","Its location is chosen for danger and visibility.","A rotating beam warns sailors near coasts and rocks.","A tall coastal tower that guides vessels with a bright light."],["harbor","Place","The sea is invited in, but the worst of it is kept out.","Walls or natural landforms calm the water inside.","Ships wait, load, repair, and shelter here.","A protected coastal area where boats can safely anchor."],["museum","Place","The past stands still behind careful lighting.","Objects gain labels after losing their ordinary use.","Collections may focus on art, history, science, or culture.","A public place that preserves and displays important objects."],["bakery","Place","The morning begins here before the doors open.","Heat turns dough into a neighborhood signal.","Bread, cakes, and pastries share the same workplace.","A shop or kitchen where baked goods are made and sold."],["stadium","Place","A crowd forms a wall around a measured contest.","The central area changes by sport or performance.","Seats rise in tiers to protect the view.","A large venue built for games and major events."],["dungeon","Place","The lowest room carries the highest threat in stories.","Stone, darkness, and locked doors define its reputation.","History used the word for imprisonment; games filled it with monsters.","An underground prison or dangerous fantasy complex."],["observatory","Place","A building is designed around looking away from Earth.","Dark skies improve its main purpose.","Large instruments track distant objects through a dome.","A facility used to observe space and the night sky."],["aquarium","Place","A window holds back an entire environment.","The visitors stay dry while the residents never do.","Tanks recreate habitats for fish and other aquatic life.","A place where water-dwelling animals are displayed in tanks."],["island","Place","Every direction eventually becomes shore.","Isolation can preserve species found nowhere else.","It may be tiny rock or nearly continental in scale.","An area of land completely surrounded by water."],["station","Place","Many journeys pause here without ending.","Schedules matter more than scenery.","Trains, buses, or spacecraft may use versions of it.","A designated place where vehicles stop, depart, or operate."],["market","Place","Many small decisions become one loud place.","Prices, smells, and conversations compete for attention.","Goods move directly between sellers and buyers.","A place where people gather to buy and sell products."],["orbit","Space","Falling continues forever because the ground keeps curving away.","Speed prevents the traveler from reaching what pulls it.","Moons and artificial craft follow versions of this path.","The curved route of one object around another in space."],["meteor","Space","A stone earns a streak only after entering the air.","Most vanish before reaching the ground.","The name changes if a surviving piece lands.","A space rock glowing as it passes through an atmosphere."],["satellite","Space","It travels constantly while remaining attached by gravity.","Natural and human-made versions share the same motion.","Communication, weather, navigation, and observation depend on many.","An object that circles a planet or other larger body."],["crater","Space","The wound remains long after the visitor disappears.","Circular walls often reveal a violent collision.","The Moon displays countless examples with little erosion.","A bowl-shaped depression caused by impact or eruption."],["eclipse","Space","A shadow becomes an astronomical event.","Alignment matters more than distance for the observer.","One object temporarily blocks another or its light.","An event where a celestial body is partly or fully obscured."],["galaxy","Space","A city of suns has no streets.","Gravity keeps stars, gas, dust, and hidden matter together.","Our own appears as a pale band from inside it.","An enormous gravitational system containing billions of stars."],["comet","Space","The tail points away from what appears to lead it.","Ice begins to release gas as the traveler nears the Sun.","Its long path may not return for generations.","A small icy space body that develops a bright coma and tail."],["asteroid","Space","A leftover world circles without becoming a planet.","Many gather in a belt between two familiar neighbors.","Some pass close enough to Earth to require tracking.","A rocky object orbiting the Sun, smaller than a planet."],["moon","Space","The night keeps changing how much of it is visible.","It borrows every bit of light people see.","Its pull helps move Earth's oceans.","Earth's natural satellite."],["nebula","Space","A cloud becomes a birthplace large enough for stars.","Color in images often reveals different gases.","Some are remains; others are beginnings.","A giant interstellar cloud of gas and dust."],["gravity","Science","Everything agrees on which way dropped objects should go.","Mass writes a curve into motion and space.","It keeps feet grounded and worlds in motion.","The attraction between objects that have mass."],["fossil","Science","Life leaves a message after the body is gone.","Rock can preserve shape, track, shell, or bone.","Scientists use it to reconstruct organisms and environments from deep time.","Preserved evidence of ancient life."],["molecule","Science","Several atoms become one identity by sharing bonds.","Its arrangement can matter as much as its ingredients.","Water is built from trillions of identical examples.","A group of chemically bonded atoms."],["prism","Science","White enters; a hidden crowd leaves.","Its angled surfaces bend different wavelengths by different amounts.","Glass versions can spread light into a spectrum.","A transparent shape that refracts and separates light."],["oxygen","Science","Most flames and human cells both depend on it.","It is common around us but invisible in ordinary conditions.","Two atoms usually travel together in the air.","The gas humans breathe for respiration."],["electricity","Science","Motion happens inside the wire before the machine responds.","It can be static, flowing, stored, or generated.","Modern homes route it through protected circuits.","Energy associated with electric charge."],["microscope","Science","A small world grows without changing size.","Focus becomes extremely sensitive at high magnification.","Cells and microbes became visible through this tool.","An instrument used to view objects too small for unaided eyes."],["nucleus","Science","The center holds most of the weight but little of the space.","Atoms and many cells each use this word differently.","Protons and neutrons occupy the atomic version.","The dense central part of an atom or controlling center of a cell."],["plasma","Science","Matter becomes energetic enough to lose ordinary boundaries.","Stars contain far more of it than Earth does naturally.","Charged particles make it respond to magnetic fields.","An ionized state of matter made of free charges."],["spectrum","Science","A continuous answer replaces simple categories.","Color is one visible slice of a much wider range.","Scientists separate signals by wavelength or frequency.","A range arranged according to wavelength, energy, or another property."],["magnetism","Science","The force can organize invisible lines around an object.","Moving charges and certain materials create it.","Compasses rely on the planet-scale version.","Attraction or repulsion associated with magnetic fields."],["friction","Science","Motion pays a tax whenever surfaces meet.","It produces heat while resisting sliding.","Walking would be impossible with too little of it.","The force that opposes movement between touching surfaces."],["velocity","Science","Direction changes the answer even when speed does not.","A car returning at the same pace can have the opposite value.","Physics treats it as a vector.","Speed measured together with direction."],["density","Science","Equal-sized boxes can disagree greatly about heaviness.","It compares mass with occupied space.","Objects may float when theirs is lower than the surrounding fluid.","The amount of mass contained in a given volume."],["energy","Science","It changes form while the total refuses to vanish.","Food, motion, heat, light, and batteries all carry versions.","Physics measures the capacity to cause change or perform work.","The ability of a system to do work or produce change."],["whisper","Action","The message tries not to wake the room.","Breath becomes more important than voice.","Secrets and libraries invite this reduced volume.","To speak extremely softly."],["stumble","Action","One step briefly forgets the plan.","The body catches itself after the foot meets trouble.","It may happen from uneven ground, haste, or surprise.","To trip or nearly fall while moving."],["vanish","Action","The scene remains, but one part stops agreeing to be seen.","Magicians practice making this look sudden.","Something can do it from view without ceasing to exist.","To disappear quickly or completely."],["sprint","Action","The journey is short because the effort cannot last.","Every step spends speed without saving energy.","Races use it for the fastest possible burst.","To run at maximum speed over a short distance."],["borrow","Action","Ownership stays behind while the object leaves.","The future includes an expected return.","Libraries make this temporary exchange routine.","To take and use something with permission, then give it back."],["juggle","Action","Several falling problems are solved one at a time.","Hands keep objects airborne through repeated throws.","The word also describes managing too many tasks.","To continuously toss and catch multiple objects."],["crawl","Action","Progress lowers itself close to the ground.","Babies often learn it before walking.","Insects and cautious people may move this way.","To move slowly on hands and knees or close to a surface."],["shiver","Action","The body starts moving without asking permission.","Cold and fear can produce the same visible result.","Tiny rapid muscle contractions create warmth.","To shake slightly and repeatedly."],["wander","Action","The path exists only after it has been taken.","A destination is optional rather than required.","Thoughts can do this without feet.","To move around without a fixed route or purpose."],["rescue","Action","The dangerous story changes direction because someone arrives.","Time matters more than ceremony.","Emergency workers train to perform this under pressure.","To save someone or something from danger."],["polish","Action","Small circles persuade a dull surface to answer with light.","The same word can improve writing or metal.","Cloth and repeated rubbing are often involved.","To make something smooth, shiny, or more refined."],["balance","Action","Opposing mistakes cancel each other for a moment.","A narrow surface makes this skill visible.","The body constantly adjusts even while standing still.","To keep weight or forces in stable equilibrium."],["disguise","Action","Recognition is prevented without removing the person.","Clothing, makeup, voice, or behavior may create it.","Spies and costume parties use very different versions.","To alter appearance in order to hide identity."],["memorize","Action","Information is stored before it is needed.","Repetition turns a new sequence into recall.","Actors, students, and musicians depend on it.","To learn something so it can be remembered exactly."],["negotiate","Action","Two sides trade certainty for agreement.","Offers move back and forth before hands meet.","Price, terms, and responsibilities may all change during it.","To discuss differences in order to reach a deal."],["shadow","Concept","It follows perfectly but never arrives first.","Its shape changes when the source moves.","Light creates it by being interrupted.","A dark area produced when an object blocks light."],["camouflage","Concept","Being noticed becomes the failure condition.","Patterns borrow colors and shapes from the surroundings.","Animals and soldiers use it for opposite kinds of survival.","Concealment created by blending into the environment."],["blueprint","Concept","The building exists here before it exists anywhere else.","Measurements matter more than decoration.","Builders use the plan to coordinate what comes later.","A detailed technical plan for constructing something."],["mystery","Concept","The missing answer becomes the main attraction.","Clues reduce it without immediately ending it.","Detective stories build tension around one.","Something difficult or impossible to explain or identify."],["courage","Concept","Fear remains, but it stops making the final decision.","It is easiest to praise after the danger has passed.","Small honest acts may require as much of it as dramatic ones.","The ability to face fear, pain, or difficulty."],["envy","Concept","Someone else's success feels like a personal subtraction.","It looks outward but hurts inward.","The emotion wants what another person has.","Resentful desire for another person's advantage or possession."],["luck","Concept","The result arrives without a clear contract with effort.","People create rituals to invite the good version.","Probability describes events without promising fairness.","Success or failure apparently caused by chance."],["silence","Concept","Nothing is heard, yet the moment can say a great deal.","It can feel peaceful, awkward, respectful, or threatening.","A room may contain it even while people are present.","The absence of sound."],["memory","Concept","The past returns without physically traveling.","It can sharpen through repetition and fade through time.","A smell sometimes opens it faster than a photograph.","The ability or record of retaining past information and experience."],["chaos","Concept","Every part moves, but no shared plan survives.","Small differences can grow into wildly different outcomes.","Order is difficult to find from inside it.","Complete disorder or highly unpredictable behavior."],["patience","Concept","Time passes without becoming an enemy.","It is tested most when control is limited.","Waiting calmly is only one form of it.","The ability to endure delay or difficulty without frustration."],["freedom","Concept","The open door matters only when leaving is allowed.","It includes choice but not necessarily lack of consequence.","History repeatedly turns it into both demand and promise.","The condition of being able to act without unjust restraint."],["rhythm","Concept","Time is divided into a pattern the body can follow.","Music makes it obvious, but speech and movement also carry it.","Repetition and variation keep it alive.","A regular pattern of beats, sounds, or motion."],["illusion","Concept","The senses provide evidence that cannot be trusted.","Perspective and expectation help create it.","Magicians use controlled versions deliberately.","A false or misleading perception of reality."],["trust","Concept","One person accepts risk based on another's reliability.","It grows slowly and can collapse quickly.","Promises matter only because this may exist behind them.","Belief that someone or something is dependable or honest."],["secret","Concept","Information gains value from restricted movement.","Sharing it changes what it is socially, even if the facts stay the same.","Whispers and locked files often protect it.","Something intentionally kept unknown from others."],["choice","Concept","Several futures wait for one decision.","Having more options can increase rather than reduce difficulty.","Responsibility often begins immediately after it.","An act of selecting between possibilities."],["popcorn","Food","Heat turns a hard seed inside out.","A quiet bag becomes suddenly impossible to ignore.","Movies made its smell part of the experience.","Corn kernels that burst into a fluffy snack when heated."],["cinnamon","Food","A tree's inner layer becomes a warm kitchen smell.","It appears in rolls, cider, and many spice blends.","Sticks and powder come from the same source.","A sweet, woody spice made from bark."],["avocado","Food","A large seed occupies the center of green richness.","Its ripeness window feels shorter than expected.","Toast and guacamole made it unusually famous.","A creamy green fruit with a large pit."],["pretzel","Food","The snack ties itself before baking.","Salt gathers on a brown surface with a pale interior.","Its classic shape resembles crossed arms.","A baked bread snack formed into a twisted knot."],["honey","Food","Flowers become a long-term food supply through insects.","It resists spoilage unusually well.","A hive stores it in geometric cells.","A thick sweet substance made by bees from nectar."],["sushi","Food","Precision turns small portions into an entire tradition.","Rice is essential even when raw fish is absent.","It is commonly served in rolls or shaped pieces.","A Japanese dish based on seasoned rice with various fillings or toppings."],["pancake","Food","The batter becomes breakfast one circle at a time.","The first attempt often tests the pan more than the cook.","Stacks invite syrup to move downward.","A flat round cake cooked on a hot surface."],["coconut","Food","A drink, flesh, and hard shell travel in one package.","Its exterior looks dry while the center may hold liquid.","Tropical palms produce it high above the ground.","A large brown tropical fruit with white flesh."],["garlic","Food","One small piece can announce itself through the entire kitchen.","The bulb divides naturally into wrapped segments.","Cooking softens both its sharpness and texture.","A strong-smelling bulb made of edible cloves."],["caramel","Food","Sugar changes color before it changes reputation.","Heat creates flavors that were absent in the crystals.","It can become sauce, candy, or a brittle coating.","A brown sweet made by heating sugar."],["piano","Art","A row of black and white decisions controls hidden strings.","The player faces sideways to the audience more often than the instrument does.","Hammers strike inside when keys are pressed.","A large keyboard instrument with strings."],["violin","Art","Four strings speak from beneath the chin.","A bow creates the sustained voice.","It is the smallest common member of its orchestral family.","A high-pitched wooden string instrument played with a bow."],["trumpet","Art","Three valves produce far more than three notes.","Breath becomes bright metal sound.","It often carries fanfares, jazz solos, and military calls.","A brass instrument with a flared bell."],["melody","Art","You can remember the song after forgetting every word.","Notes form a line rather than a stack.","It is usually the part people hum.","A recognizable sequence of musical notes."],["canvas","Art","The empty surface already expects color.","It can be stretched tightly before the first mark.","Painters commonly choose it instead of a wall.","A strong fabric surface used for painting."],["portrait","Art","One person becomes the main landscape.","Expression can matter more than exact resemblance.","Paint, photography, and drawing all create versions.","An artistic image focused on a person or face."],["sculpture","Art","The artwork occupies the same air as the viewer.","Material is added, carved, cast, or assembled.","It can be seen from more than one side.","A three-dimensional work of art."],["chorus","Art","The song returns to the place everyone recognizes.","Multiple voices may sing it together.","Verses change while this section usually repeats.","The recurring main section of a song or a group of singers."],["ballet","Art","Strength hides inside controlled lightness.","Stories can be told almost entirely through movement.","Special shoes allow dancers to rise onto their toes.","A formal dance style known for precise technique."],["graffiti","Art","A wall becomes a message without asking permission.","Aerosol paint and bold lettering are common tools.","It can be viewed as art, vandalism, or both.","Images or writing placed on public surfaces."],["sphinx","Myth","The question is more dangerous than the claws.","A lion's body carries a human face in the famous form.","Travelers in one Greek story had to solve its challenge.","A mythical creature associated with riddles."],["dragon","Myth","A treasure room receives its own living lock.","Different cultures give it wings, wisdom, weather, or flame.","Heroes become legendary by surviving one.","A huge legendary reptile often able to fly or breathe fire."],["phoenix","Myth","The ending supplies material for the next beginning.","Fire destroys and restores the same creature.","Its lifespan closes in ash before renewal.","A mythical bird reborn from its own remains."],["mermaid","Myth","The sailor sees a person where the body becomes ocean.","Songs and beauty often hide danger in older tales.","The upper half is human and the lower half is fish.","A legendary sea being that is part human and part fish."],["minotaur","Myth","The maze has a heartbeat at its center.","A royal mistake produces a monster with two natures.","Greek legend gives it a man's body and bull's head.","A bull-headed creature imprisoned in a labyrinth."],["unicorn","Myth","Purity gains a single weapon in the center of the forehead.","Medieval stories made it nearly impossible to capture.","It resembles a horse except for one famous feature.","A legendary horse-like creature with one horn."],["wizard","Myth","Study and power meet behind a robe and staff.","The role may advise a king or challenge an entire world.","Spells replace ordinary tools.","A fictional person who uses magic."],["kraken","Myth","The ocean grows enough arms to pull down a ship.","Sailor stories enlarged a real family of animals.","It waits below rather than guarding a cave.","A legendary gigantic sea monster with tentacles."],["maze","Puzzle","Every option looks like progress until the wall disagrees.","The destination matters less than the route that hides it.","Viewed from above, confusion becomes design.","A network of passages with misleading branches."],["riddle","Puzzle","The answer is hidden inside the way the question is asked.","Language creates the lock and insight becomes the key.","It rewards interpretation more than stored facts.","A puzzling question or statement with a clever solution."],["chess","Game","A war takes place where both sides begin equally.","The smallest piece can eventually become almost anything.","Victory targets one royal figure rather than every opponent.","A strategy board game with kings, queens, and sixteen pieces per side."],["domino","Game","One falling decision can travel through an entire line.","Each tile carries two numbered halves.","Games use them flat; demonstrations often stand them upright.","A small rectangular tile marked with dots."],["puzzle","Game","The problem is packaged with the promise of an answer.","Pieces may fit physically or logically.","Completion turns confusion into a single intended whole.","A challenge designed to test problem-solving."],["dice","Game","A small cube gives chance six faces.","Opposite sides follow a consistent numbering rule.","Rolling them turns motion into a result.","Small numbered objects thrown to generate random outcomes."],["jackpot","Game","Many losses point toward one oversized win.","Machines celebrate it with more noise than restraint.","The term now describes any unexpectedly excellent result.","The largest prize available in a gambling game or contest."],["cactus","Plant","The leaves became weapons to protect hidden water.","Its shape treats rain as a rare visitor.","Many species store moisture inside thick green tissue.","A drought-adapted plant covered in spines."],["bamboo","Plant","A grass grows tall enough to look like a forest.","Some varieties can add remarkable height in a single day.","Hollow segmented stems become food, tools, and building material.","A fast-growing woody grass with jointed stalks."],["sunflower","Plant","The field appears to hold hundreds of small suns.","Young heads track daylight more than mature ones do.","Seeds form in dense spirals at the center.","A tall yellow flower with a large dark seed head."],["mushroom","Plant","The visible umbrella is only a temporary message from below.","It has no flowers and does not use sunlight like green plants.","Spores spread from gills, pores, or other surfaces.","The fruiting body of a fungus, often with a cap and stem."],["ivy","Plant","A wall gains leaves without planting a tree beside it.","Small roots grip surfaces as stems climb.","It may cover buildings so densely that the structure nearly disappears.","A climbing evergreen vine."],["midnight","Time","A day changes its name while most people sleep.","The clock reaches twelve without sunlight.","It divides one calendar date from the next.","Twelve o'clock in the middle of the night."],["calendar","Time","The future is divided into numbered boxes.","Months disagree on length but share the same page.","Appointments and holidays turn dates into plans.","A system or chart for organizing days, weeks, and months."],["weekend","Time","Two days carry more freedom than the other five.","Its exact days vary in some cultures and jobs.","School and many offices pause here.","The part of the week commonly reserved for rest."],["decade","Time","Ten trips around the Sun become one historical label.","Fashion and music often get grouped inside it.","A person's age crosses one at every tenth birthday.","A period of ten years."],["sunrise","Time","The horizon introduces the day before the sky fully agrees.","Its colors arrive because light travels through more atmosphere.","The Sun appears to climb although Earth is turning.","The daily appearance of the Sun above the horizon."],["fingerprint","Body","A tiny landscape identifies the person carrying it.","The pattern forms before birth and usually lasts for life.","Loops, whorls, and arches help classify it.","The unique ridge pattern on the tip of a finger."],["heartbeat","Body","The body's metronome changes tempo without music.","Exercise makes it easier to notice.","Each cycle pushes blood through a network of vessels.","The repeated contraction that pumps blood from the heart."],["sneeze","Body","The face launches an emergency response in less than a second.","Bright light can trigger it in some people.","Air exits suddenly through nose and mouth.","An involuntary explosive release caused by nasal irritation."],["yawn","Body","One open mouth can spread across a room without sound.","Tiredness is common, but not the only trigger.","People often inhale deeply while doing it.","An involuntary wide opening of the mouth with a deep breath."],["elbow","Body","The arm's corner points backward when standing normally.","Bending here brings the hand toward the shoulder.","A hard bump can produce an electric-feeling shock.","The joint between the upper and lower arm."]];
+
+    const WORD_BANK = RAW_WORD_BANK.map(([word, category, clue1, clue2, clue3, finalClue]) => {
+      const first = word[0].toUpperCase();
+      const last = word[word.length - 1].toUpperCase();
+      const patternClue = `The answer starts with “${first}”, ends with “${last}”, and contains ${word.length} letters.`;
+      return { word, category, clues: [clue1, clue2, clue3, patternClue, finalClue] };
+    });
+
+    const BOT_NAMES = ['Nyx', 'Vanta', 'Rook', 'Moth', 'Echo', 'Kite', 'Nova'];
+
+    const state = {
+      players: [],
+      humanId: 'human',
+      mystery: 0,
+      totalMysteries: 5,
+      clueRound: 1,
+      difficulty: 'normal',
+      current: null,
+      phase: 'lobby',
+      submitted: false,
+      roundStart: 0,
+      timers: [],
+      wordDeck: [],
+      sound: true,
+      audio: null,
+      roundAnswers: new Map()
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      lobbyScreen: $('lobbyScreen'), gameScreen: $('gameScreen'), playerName: $('playerName'), botCount: $('botCount'),
+      botCountLabel: $('botCountLabel'), difficulty: $('difficulty'), roundCount: $('roundCount'), startBtn: $('startBtn'),
+      roundTitle: $('roundTitle'), roundCounter: $('roundCounter'), phasePill: $('phasePill'), playerNodes: $('playerNodes'),
+      hintLabel: $('hintLabel'), hintText: $('hintText'), countdownOverlay: $('countdownOverlay'), countdownNumber: $('countdownNumber'),
+      guessInput: $('guessInput'), submitBtn: $('submitBtn'), inputCaption: $('inputCaption'), timerFill: $('timerFill'),
+      leaderboard: $('leaderboard'), roundLog: $('roundLog'), leaveBtn: $('leaveBtn'), lizard: $('lizard'),
+      resultsModal: $('resultsModal'), winnerName: $('winnerName'), winnerCopy: $('winnerCopy'), finalList: $('finalList'),
+      playAgainBtn: $('playAgainBtn'), toast: $('toast'), muteBtn: $('muteBtn'), fullscreenBtn: $('fullscreenBtn')
+    };
+
+    function tone(freq = 500, duration = .08, type = 'sine', volume = .035) {
+      if (!state.sound) return;
+      try {
+        if (!state.audio) state.audio = new (window.AudioContext || window.webkitAudioContext)();
+        const o = state.audio.createOscillator();
+        const g = state.audio.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = volume;
+        o.connect(g);
+        g.connect(state.audio.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(.0001, state.audio.currentTime + duration);
+        o.stop(state.audio.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => {
+        const id = setTimeout(resolve, ms);
+        state.timers.push(id);
+      });
+    }
+
+    function clearTimers() {
+      state.timers.forEach(clearTimeout);
+      state.timers = [];
+    }
+
+    function normalizeWord(value) {
+      return value.trim().toLowerCase().replace(/[^a-z0-9'-]/g, '');
+    }
+
+    function initials(name) {
+      return name.split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+    }
+
+    function shuffled(items) {
+      const arr = [...items];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function loadSeenWords() {
+      try {
+        const value = JSON.parse(localStorage.getItem(SEEN_WORDS_KEY) || '[]');
+        return Array.isArray(value) ? value.filter(word => typeof word === 'string') : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveSeenWords(words) {
+      try {
+        localStorage.setItem(SEEN_WORDS_KEY, JSON.stringify(words.slice(-WORD_BANK.length)));
+      } catch (_) {}
+    }
+
+    function selectWordDeck(count) {
+      let seenList = loadSeenWords();
+      let seenSet = new Set(seenList);
+      const unseen = shuffled(WORD_BANK.filter(entry => !seenSet.has(entry.word)));
+      let selected;
+
+      if (unseen.length >= count) {
+        selected = unseen.slice(0, count);
+        seenList = [...seenList, ...selected.map(entry => entry.word)];
+      } else {
+        selected = [...unseen];
+        const alreadySelected = new Set(selected.map(entry => entry.word));
+        const refill = shuffled(WORD_BANK.filter(entry => !alreadySelected.has(entry.word)));
+        selected.push(...refill.slice(0, count - selected.length));
+        seenList = selected.map(entry => entry.word);
+      }
+
+      saveSeenWords([...new Set(seenList)]);
+      return selected;
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add('show');
+      setTimeout(() => els.toast.classList.remove('show'), 1400);
+    }
+
+    function buildPlayers() {
+      const humanName = els.playerName.value.trim() || 'Player';
+      const count = Number(els.botCount.value);
+      state.players = [{ id: state.humanId, name: humanName, score: 0, history: [], human: true, roundStatus: 'waiting' }];
+      for (let i = 0; i < count; i++) {
+        state.players.push({ id: `bot-${i}`, name: BOT_NAMES[i], score: 0, history: [], human: false, roundStatus: 'waiting' });
+      }
+    }
+
+    function renderNodes() {
+      const n = state.players.length;
+      const orbitSize = $('orbit').getBoundingClientRect().width || Math.min(window.innerWidth * .72, 700);
+      const radius = Math.max(138, orbitSize / 2 - (window.innerWidth < 700 ? 14 : 22));
+      els.playerNodes.innerHTML = state.players.map((p, i) => {
+        const angle = (360 / n) * i + 180;
+        return `<div class="player-node ${p.human ? 'human' : ''}" id="node-${p.id}" style="--angle:${angle}deg;--orbit-radius:${radius}px">
+          <div class="avatar">${escapeHtml(initials(p.name))}<span class="answer-dot" id="dot-${p.id}"></span></div>
+          <div class="player-name">${escapeHtml(p.name)}</div>
+          <div class="player-score" id="node-score-${p.id}">${p.score.toLocaleString()} pts</div>
+          <div class="player-answer" id="answer-${p.id}"></div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderLeaderboard() {
+      const sorted = [...state.players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+      els.leaderboard.innerHTML = sorted.map((p, i) => `<div class="leader-row">
+        <span class="rank">${String(i + 1).padStart(2, '0')}</span>
+        <span class="leader-name">${escapeHtml(p.name)}${p.human ? ' · YOU' : ''}</span>
+        <span class="leader-points">${p.score.toLocaleString()}</span>
+      </div>`).join('');
+      state.players.forEach(p => {
+        const e = $(`node-score-${p.id}`);
+        if (e) e.textContent = `${p.score.toLocaleString()} pts`;
+      });
+    }
+
+    function resetRoundVisuals() {
+      state.roundAnswers = new Map();
+      state.players.forEach(p => {
+        p.roundStatus = 'waiting';
+        const node = $(`node-${p.id}`);
+        if (node) node.className = `player-node ${p.human ? 'human' : ''}`;
+        const dot = $(`dot-${p.id}`);
+        if (dot) dot.className = 'answer-dot locked';
+        const answer = $(`answer-${p.id}`);
+        if (answer) {
+          answer.className = 'player-answer';
+          answer.textContent = '';
+        }
+      });
+      els.guessInput.value = '';
+      els.guessInput.disabled = true;
+      els.submitBtn.disabled = true;
+      els.guessInput.placeholder = 'Wait for the countdown...';
+      els.inputCaption.textContent = 'Your box opens when the host says GO.';
+      els.timerFill.className = 'timer-fill';
+      state.submitted = false;
+    }
+
+    function setPhase(phase, label) {
+      state.phase = phase;
+      els.phasePill.textContent = label;
+    }
+
+    function log(message) {
+      const item = document.createElement('div');
+      item.className = 'log-item';
+      item.innerHTML = message;
+      els.roundLog.prepend(item);
+      while (els.roundLog.children.length > 14) els.roundLog.lastChild.remove();
+    }
+
+    function clueLabel() {
+      if (state.clueRound <= 2) return `Cipher clue · ${state.clueRound} of ${CLUES_PER_WORD}`;
+      if (state.clueRound === 3) return `${state.current.category} unlocked · 3 of ${CLUES_PER_WORD}`;
+      if (state.clueRound === 4) return `${state.current.category} · pattern clue`;
+      return `${state.current.category} · final clue`;
+    }
+
+    async function startMatch() {
+      clearTimers();
+      buildPlayers();
+      state.mystery = 0;
+      state.totalMysteries = Number(els.roundCount.value);
+      state.clueRound = 1;
+      state.difficulty = els.difficulty.value;
+      state.wordDeck = selectWordDeck(state.totalMysteries);
+      setPhase('preparing', 'Preparing');
+      els.roundLog.innerHTML = `<div class="log-item">The circle has formed. ${WORD_BANK.length} mysteries are loaded.</div>`;
+      els.lobbyScreen.classList.remove('active');
+      els.gameScreen.classList.add('active');
+      els.resultsModal.classList.remove('active');
+      renderNodes();
+      renderLeaderboard();
+      await sleep(650);
+      nextMystery();
+    }
+
+    async function nextMystery() {
+      if (state.mystery >= state.totalMysteries) return finishMatch();
+      state.mystery++;
+      state.current = state.wordDeck[state.mystery - 1];
+      state.clueRound = 1;
+      log(`<b>Mystery ${state.mystery}</b> begins. The same secret can survive five clues.`);
+      await startClueRound();
+    }
+
+    async function startClueRound() {
+      if (state.phase === 'lobby') return;
+      resetRoundVisuals();
+      renderLeaderboard();
+      els.roundTitle.textContent = `Mystery ${state.mystery}`;
+      els.roundCounter.textContent = `${state.mystery} of ${state.totalMysteries} · clue ${state.clueRound}/${CLUES_PER_WORD}`;
+      els.hintLabel.textContent = clueLabel();
+      els.hintText.textContent = state.current.clues[state.clueRound - 1];
+      els.lizard.className = 'lizard thinking';
+      setPhase('hint', `Clue ${state.clueRound}`);
+      tone(360 + state.clueRound * 35, .12, 'triangle');
+      await sleep(2100);
+      if (state.phase === 'lobby') return;
+      await runCountdown();
+      if (state.phase === 'lobby') return;
+      openGuessing();
+    }
+
+    async function runCountdown() {
+      setPhase('countdown', 'Get ready');
+      els.countdownOverlay.classList.add('active');
+      for (const num of ['3', '2', '1']) {
+        els.countdownNumber.textContent = num;
+        els.countdownNumber.style.animation = 'none';
+        void els.countdownNumber.offsetWidth;
+        els.countdownNumber.style.animation = '';
+        tone(num === '1' ? 700 : 520, .09, 'square', .025);
+        await sleep(720);
+      }
+      els.countdownNumber.textContent = 'GO';
+      els.countdownNumber.style.animation = 'none';
+      void els.countdownNumber.offsetWidth;
+      els.countdownNumber.style.animation = '';
+      tone(940, .16, 'square', .035);
+      await sleep(380);
+      els.countdownOverlay.classList.remove('active');
+    }
+
+    function openGuessing() {
+      setPhase('guessing', 'Guess now');
+      state.roundStart = performance.now();
+      els.guessInput.disabled = false;
+      els.submitBtn.disabled = false;
+      els.guessInput.placeholder = 'Type one word...';
+      els.inputCaption.textContent = `Clue ${state.clueRound} of 5. Use a new answer each attempt.`;
+      els.timerFill.className = 'timer-fill';
+      void els.timerFill.offsetWidth;
+      els.timerFill.classList.add('running');
+      const humanDot = $(`dot-${state.humanId}`);
+      if (humanDot) humanDot.className = 'answer-dot';
+      els.guessInput.focus();
+      scheduleBots();
+      const id = setTimeout(endRound, 5000);
+      state.timers.push(id);
+    }
+
+    function botProfile() {
+      const profiles = {
+        easy: {
+          correct: [.01, .035, .09, .20, .40],
+          blank: .12,
+          repeat: .10,
+          min: 1250,
+          max: 4900
+        },
+        normal: {
+          correct: [.025, .07, .16, .34, .60],
+          blank: .07,
+          repeat: .07,
+          min: 700,
+          max: 4550
+        },
+        hard: {
+          correct: [.05, .13, .28, .52, .78],
+          blank: .025,
+          repeat: .04,
+          min: 360,
+          max: 3450
+        }
+      };
+      return profiles[state.difficulty];
+    }
+
+    function pickWrongBotAnswer(bot) {
+      const unusedSameCategory = WORD_BANK.filter(entry =>
+        entry.category === state.current.category &&
+        entry.word !== state.current.word &&
+        !bot.history.includes(entry.word)
+      );
+      const unusedAny = WORD_BANK.filter(entry =>
+        entry.word !== state.current.word &&
+        !bot.history.includes(entry.word)
+      );
+      const source = unusedSameCategory.length ? unusedSameCategory : unusedAny;
+      return source[Math.floor(Math.random() * source.length)].word;
+    }
+
+    function scheduleBots() {
+      const profile = botProfile();
+      const correctChance = profile.correct[state.clueRound - 1];
+      const clueSpeedFactor = [1.15, 1.08, .98, .88, .78][state.clueRound - 1];
+
+      state.players.filter(p => !p.human).forEach((bot, index) => {
+        const personality = .82 + ((index * 13) % 29) / 100;
+        const delay = Math.min(4920, Math.floor((profile.min + Math.random() * (profile.max - profile.min)) * personality * clueSpeedFactor));
+        const id = setTimeout(() => {
+          if (state.phase !== 'guessing') return;
+          const roll = Math.random();
+          if (roll < profile.blank) return;
+
+          let answer;
+          if (bot.history.length && roll < profile.blank + profile.repeat) {
+            answer = bot.history[Math.floor(Math.random() * bot.history.length)];
+          } else if (roll < profile.blank + profile.repeat + correctChance) {
+            answer = state.current.word;
+          } else {
+            answer = pickWrongBotAnswer(bot);
+          }
+          submitAnswer(bot.id, answer, delay, false);
+        }, delay);
+        state.timers.push(id);
+      });
+    }
+
+    function humanSubmit() {
+      if (state.phase !== 'guessing' || state.submitted) return;
+      const answer = els.guessInput.value.trim();
+      if (!answer) {
+        showToast('Type a word before locking in.');
+        tone(180, .08, 'sawtooth', .02);
+        return;
+      }
+      const elapsed = Math.min(5000, performance.now() - state.roundStart);
+      state.submitted = true;
+      els.guessInput.disabled = true;
+      els.submitBtn.disabled = true;
+      els.inputCaption.textContent = 'Answer locked. Waiting for the table...';
+      submitAnswer(state.humanId, answer, elapsed, true);
+    }
+
+    function submitAnswer(playerId, rawAnswer, elapsed, isHuman) {
+      const player = state.players.find(p => p.id === playerId);
+      if (!player || state.roundAnswers.has(playerId)) return;
+      const answer = normalizeWord(rawAnswer);
+      state.roundAnswers.set(playerId, { answer, elapsed, isHuman });
+      player.roundStatus = 'submitted';
+      const dot = $(`dot-${playerId}`);
+      if (dot) dot.className = 'answer-dot submitted';
+      if (isHuman) tone(620, .08, 'triangle', .028);
+    }
+
+    function scoreSubmission(player, submission) {
+      if (!submission || !submission.answer) {
+        return { delta: -250, status: 'blank', text: 'No answer' };
+      }
+      if (player.history.includes(submission.answer)) {
+        return { delta: -150, status: 'repeat', text: `Repeated “${submission.answer}”` };
+      }
+      if (submission.answer === state.current.word) {
+        const speedScore = Math.round(1000 - (submission.elapsed / 5000) * 750);
+        const clueMultiplier = [1, .82, .66, .50, .36][state.clueRound - 1];
+        const points = Math.max(100, Math.round(speedScore * clueMultiplier));
+        return {
+          delta: points,
+          status: 'correct',
+          text: `Correct on clue ${state.clueRound} in ${(submission.elapsed / 1000).toFixed(2)}s`
+        };
+      }
+      return { delta: 0, status: 'wrong', text: `Guessed “${submission.answer}”` };
+    }
+
+    function revealCurrentWord(label) {
+      els.hintLabel.textContent = label;
+      els.hintText.textContent = state.current.word.toUpperCase();
+    }
+
+    function endRound() {
+      if (state.phase !== 'guessing') return;
+      setPhase('results', 'Clue result');
+      els.guessInput.disabled = true;
+      els.submitBtn.disabled = true;
+      els.timerFill.classList.remove('running');
+
+      const outcomes = [];
+      state.players.forEach(player => {
+        const submission = state.roundAnswers.get(player.id);
+        const outcome = scoreSubmission(player, submission);
+        player.score += outcome.delta;
+        player.roundStatus = outcome.status;
+        if (submission && submission.answer && !player.history.includes(submission.answer)) {
+          player.history.push(submission.answer);
+        }
+        outcomes.push({ player, submission, outcome });
+
+        const node = $(`node-${player.id}`);
+        if (node) node.className = `player-node ${player.human ? 'human' : ''} ${outcome.status}`;
+        const dot = $(`dot-${player.id}`);
+        if (dot) dot.className = `answer-dot ${outcome.status === 'correct' ? 'correct' : (outcome.delta < 0 ? 'penalty' : 'submitted')}`;
+        const answerEl = $(`answer-${player.id}`);
+        if (answerEl) {
+          answerEl.textContent = outcome.delta > 0 ? `+${outcome.delta}` : outcome.delta < 0 ? `${outcome.delta}` : '0';
+          answerEl.className = 'player-answer visible';
+        }
+      });
+
+      const correct = outcomes.filter(x => x.outcome.status === 'correct').sort((a, b) => b.outcome.delta - a.outcome.delta);
+      const blanks = outcomes.filter(x => x.outcome.status === 'blank').length;
+      const repeats = outcomes.filter(x => x.outcome.status === 'repeat').length;
+      const finalClueExpired = state.clueRound >= CLUES_PER_WORD;
+
+      if (correct.length) {
+        revealCurrentWord(`Solved on clue ${state.clueRound}`);
+        els.inputCaption.textContent = `${correct[0].player.name} cracked the mystery. A new word is coming.`;
+        log(`<b>${escapeHtml(correct[0].player.name)}</b> solved <b>${escapeHtml(state.current.word)}</b> first on clue ${state.clueRound} for +${correct[0].outcome.delta}.`);
+        if (correct.length > 1) log(`<b>${correct.length}</b> players solved the word before time expired.`);
+        els.lizard.className = 'lizard celebrate';
+        tone(760, .1, 'triangle', .03);
+        setTimeout(() => tone(980, .14, 'triangle', .025), 100);
+      } else if (finalClueExpired) {
+        revealCurrentWord('All five clues expired');
+        els.inputCaption.textContent = `Nobody solved “${state.current.word}”. A new mystery is coming.`;
+        log(`All five clues expired. The word was <b>${escapeHtml(state.current.word)}</b>.`);
+        tone(180, .2, 'sawtooth', .025);
+      } else {
+        els.hintLabel.textContent = `Unsolved · clue ${state.clueRound} of ${CLUES_PER_WORD}`;
+        els.hintText.textContent = 'The same mystery continues. A stronger clue is being prepared...';
+        els.inputCaption.textContent = `No solve. Clue ${state.clueRound + 1} will use the same secret word.`;
+        log(`Nobody solved mystery ${state.mystery} on clue ${state.clueRound}. The word remains hidden.`);
+        tone(230, .14, 'sawtooth', .02);
+      }
+
+      if (blanks) log(`<b>${blanks}</b> ${blanks === 1 ? 'player was' : 'players were'} silent and lost 250.`);
+      if (repeats) log(`<b>${repeats}</b> recycled ${repeats === 1 ? 'answer was' : 'answers were'} penalized.`);
+      renderLeaderboard();
+
+      if (correct.length || finalClueExpired) {
+        const id = setTimeout(nextMystery, 3000);
+        state.timers.push(id);
+      } else {
+        state.clueRound++;
+        const id = setTimeout(startClueRound, 2400);
+        state.timers.push(id);
+      }
+    }
+
+    function finishMatch() {
+      clearTimers();
+      setPhase('finished', 'Match complete');
+      const sorted = [...state.players].sort((a, b) => b.score - a.score);
+      const winner = sorted[0];
+      els.winnerName.textContent = winner.name;
+      els.winnerCopy.textContent = winner.human
+        ? 'You cracked the clues before the circle did.'
+        : `${winner.name} solved the noir circle this time.`;
+      els.finalList.innerHTML = sorted.map((p, i) => `<div class="final-row"><span>${i + 1}. ${escapeHtml(p.name)}${p.human ? ' · YOU' : ''}</span><b>${p.score.toLocaleString()} pts</b></div>`).join('');
+      els.resultsModal.classList.add('active');
+      tone(520, .12, 'triangle', .03);
+      setTimeout(() => tone(760, .12, 'triangle', .025), 140);
+      setTimeout(() => tone(1040, .2, 'triangle', .02), 280);
+    }
+
+    function leaveMatch() {
+      clearTimers();
+      state.phase = 'lobby';
+      els.countdownOverlay.classList.remove('active');
+      els.gameScreen.classList.remove('active');
+      els.lobbyScreen.classList.add('active');
+      els.resultsModal.classList.remove('active');
+    }
+
+    els.botCount.addEventListener('input', () => els.botCountLabel.textContent = els.botCount.value);
+    els.startBtn.addEventListener('click', startMatch);
+    els.submitBtn.addEventListener('click', humanSubmit);
+    els.guessInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') humanSubmit();
+    });
+    els.leaveBtn.addEventListener('click', leaveMatch);
+    els.playAgainBtn.addEventListener('click', startMatch);
+    els.muteBtn.addEventListener('click', () => {
+      state.sound = !state.sound;
+      els.muteBtn.textContent = state.sound ? '♪' : '×';
+      showToast(state.sound ? 'Sound on' : 'Sound off');
+    });
+    els.fullscreenBtn.addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) {
+        showToast('Fullscreen is not available here.');
+      }
+    });
+    window.addEventListener('resize', () => {
+      if (state.phase !== 'lobby') renderNodes();
+    });
+  </script>
+</body>
+</html>
